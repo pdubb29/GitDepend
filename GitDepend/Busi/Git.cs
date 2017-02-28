@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO.Abstractions;
+using System.Linq;
+using LibGit2Sharp;
 
 namespace GitDepend.Busi
 {
@@ -10,6 +12,7 @@ namespace GitDepend.Busi
     {
         private readonly IProcessManager _processManager;
         private readonly IFileSystem _fileSystem;
+        private readonly IConsole _console;
 
         /// <summary>
         /// The working directory for all git operations.
@@ -23,6 +26,9 @@ namespace GitDepend.Busi
         {
             _processManager = DependencyInjection.Resolve<IProcessManager>();
             _fileSystem = DependencyInjection.Resolve<IFileSystem>();
+            _console = DependencyInjection.Resolve<IConsole>();
+
+            WorkingDirectory = _fileSystem.Path.GetFullPath(".");
         }
 
         /// <summary>
@@ -33,9 +39,28 @@ namespace GitDepend.Busi
         /// <returns>The git return code.</returns>
         public ReturnCode Checkout(string branch, bool create)
         {
-            return ExecuteGitCommand(create
-                ? $"checkout -b {branch}"
-                : $"checkout {branch}");
+            if (create)
+            {
+                var code = CreateBranch(branch);
+                if (code != ReturnCode.Success)
+                {
+                    return code;
+                }
+            }
+
+            using (var repo = new Repository(WorkingDirectory))
+            {
+                var branchRef = repo.Branches.FirstOrDefault(b => b.FriendlyName == branch);
+
+                if (branchRef != null)
+                {
+                    LibGit2Sharp.Commands.Checkout(repo, branchRef);
+                    _console.WriteLine($"Switched to branch '{branch}'");
+                    return ReturnCode.Success;
+                }
+                _console.WriteLine($"error: pathspec '{branch}' did not match any file(s) known to git.");
+                return ReturnCode.FailedToRunGitCommand;
+            }
         }
 
         /// <summary>
@@ -45,7 +70,13 @@ namespace GitDepend.Busi
         /// <returns>The git return code.</returns>
         public ReturnCode CreateBranch(string branch)
         {
-            return ExecuteGitCommand($"branch {branch}");
+            using (var repo = new Repository(WorkingDirectory))
+            {
+                repo.CreateBranch(branch);
+                _console.WriteLine($"Created branch '{branch}'");
+
+                return ReturnCode.Success;
+            }
         }
 
         /// <summary>
@@ -121,7 +152,7 @@ namespace GitDepend.Busi
         /// <returns></returns>
         public string GetCurrentBranch()
         {
-            using (var repo = new LibGit2Sharp.Repository(WorkingDirectory))
+            using (var repo = new Repository(WorkingDirectory))
             {
                 return repo.Head.FriendlyName;
             }

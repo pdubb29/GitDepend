@@ -77,7 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Busi\GitDependFileFactoryTests.cs" />
-    <Compile Include="Busi\GitTests.cs" />
     <Compile Include="Commands\BranchCommandTests.cs" />
     <Compile Include="Commands\CheckOutCommandTests.cs" />
     <Compile Include="Commands\CloneCommandTests.cs" />
