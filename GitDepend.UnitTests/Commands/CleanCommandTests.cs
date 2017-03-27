@@ -23,27 +23,28 @@ namespace GitDepend.UnitTests.Commands
         private CleanSubOptions _badCleanSubOptions;
         private IGitDependFileFactory _gitDependFactory;
         private IFileSystem _fileSystem;
+        private IList<string> _gitArguments;
 
         [SetUp]
         public void Setup()
         {
+            _gitArguments = new List<string>()
+            {
+                "-fxdn",
+                "-e",
+                "*/xw"
+            };
+
             _fileSystem = DependencyInjection.Resolve<IFileSystem>();
             _badCleanSubOptions = new CleanSubOptions()
             {
                 Directory = "dir",
-                DryRun = false,
-                Force = false,
-                RemoveUntrackedFiles = false,
-                RemoveUntrackedDirectories = false
             };
 
             _goodCleanSubOptions = new CleanSubOptions()
             {
                 Directory = "dir",
-                DryRun = true,
-                Force = true,
-                RemoveUntrackedFiles = true,
-                RemoveUntrackedDirectories = true
+                GitArguments = _gitArguments
             };
             string dir;
             ReturnCode code;
@@ -91,7 +92,7 @@ namespace GitDepend.UnitTests.Commands
         public void CleanCommand_Fails_GitReturnCode_FailedToRun()
         {
             var git = DependencyInjection.Resolve<IGit>();
-            git.Arrange(x => x.Clean(false, false, false, false)).Returns(ReturnCode.FailedToRunGitCommand).MustBeCalled();
+            git.Arrange(x => x.Clean(Arg.IsAny<IList<string>>())).Returns(ReturnCode.FailedToRunGitCommand).MustBeCalled();
             var algorithm = DependencyInjection.Resolve<IDependencyVisitorAlgorithm>();
             algorithm.Arrange(x => x.TraverseDependencies(Arg.IsAny<IVisitor>(), Arg.AnyString)).DoInstead(
                 (IVisitor visitor, string directory) =>
@@ -113,7 +114,7 @@ namespace GitDepend.UnitTests.Commands
         public void CleanCommand_WithProject_Succeeds()
         {
             var git = DependencyInjection.Resolve<IGit>();
-            git.Arrange(x => x.Clean(Arg.AnyBool, Arg.AnyBool, Arg.AnyBool, Arg.AnyBool))
+            git.Arrange(x => x.Clean(Arg.IsAny<IList<string>>()))
                 .Returns(ReturnCode.Success)
                 .MustBeCalled();
 

@@ -39,7 +39,7 @@ namespace GitDepend.Commands
         /// <returns></returns>
         protected override NamedDependenciesVisitor CreateVisitor(CleanSubOptions options)
         {
-            return new CleanDependencyVisitor(Options.DryRun, Options.Force, Options.RemoveUntrackedFiles, Options.RemoveUntrackedDirectories, Options.Dependencies);
+            return new CleanDependencyVisitor(options.GitArguments, options.Dependencies);
         }
 
 
@@ -67,7 +67,7 @@ namespace GitDepend.Commands
 
         private ReturnCode GitClean(CleanSubOptions options)
         {
-            return _git.Clean(options.DryRun, options.Force, options.RemoveUntrackedFiles, options.RemoveUntrackedDirectories);
+            return _git.Clean(options.GitArguments);
         }
     }
 }

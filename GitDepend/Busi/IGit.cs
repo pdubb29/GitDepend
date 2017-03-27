@@ -92,7 +92,7 @@ namespace GitDepend.Busi
         /// Cleans the directory.
         /// </summary>
         /// <returns></returns>
-        ReturnCode Clean(bool dryRun, bool force, bool removeFiles, bool removeDirectories);
+        ReturnCode Clean(IList<string> gitCleanArguments);
 
         /// <summary>
         /// Runs the pull command with the arguments provided.
